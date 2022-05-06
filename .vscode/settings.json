@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "ostream": "cpp",
+        "new": "cpp",
+        "iostream": "cpp",
+        "iosfwd": "cpp",
+        "string": "cpp",
+        "chrono": "cpp",
+        "utility": "cpp",
+        "algorithm": "cpp",
+        "vector": "cpp",
+        "queue": "cpp",
+        "deque": "cpp",
+        "__node_handle": "cpp",
+        "cstdlib": "cpp"
+    }
+}
