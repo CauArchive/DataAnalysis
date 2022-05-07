@@ -102,36 +102,7 @@ def find_closest_centroid(centroids, cluster_atts_idx, datum):
     return closest_centroid_distance, closest_centroid_idx
 
 
-def kmeans_plus_plus(data_rows, k, cluster_atts_idxs):
-    centroids = list(itertools.repeat(None, k))
-
-    r = random.randint(0, len(data_rows) - 1)
-    centroids[0] = project_cluster_atts(data_rows[r], cluster_atts_idxs)
-
-    for i in range(1, k):
-        d = []
-        sum_of_squared_distances = 0
-        for datum_idx in range(0, len(data_rows)):
-            datum = data_rows[datum_idx]
-            closest_centroid_distance, closest_centroid_idx = find_closest_centroid(
-                centroids, cluster_atts_idxs, datum)
-            d.append([datum_idx, math.pow(closest_centroid_distance, 2)])
-            sum_of_squared_distances += math.pow(closest_centroid_distance, 2)
-
-        r = random.random()
-
-        accumulator = 0
-        s_idx = -1
-        while accumulator < r:
-            s_idx = s_idx + 1
-            accumulator += d[s_idx][1] / sum_of_squared_distances
-
-        centroids[i] = project_cluster_atts(
-            data_rows[d[s_idx][0]], cluster_atts_idxs)
-    return centroids
-
-
-def rand_init_centroids(data_rows, k, cluster_atts_idxs):
+def random_pick_centroids(data_rows, k, cluster_atts_idxs):
     centroids = list(itertools.repeat(None, k))
 
     idxs = list(range(0, len(data_rows)))
@@ -316,11 +287,7 @@ def sort_for_plot(x, y):
 
 def main():
     argv = sys.argv
-    print("Command line args are {}: ".format(argv))
-
     config = load_config(argv[1])
-
-    print(config)
 
     data = load_csv_to_header_data(config['data_file'])
     data = project_columns(data, config['data_project_columns'])
@@ -330,11 +297,7 @@ def main():
     cluster_atts_idxs = [data['name_to_idx'][x] for x in cluster_atts]
 
     plot_config = config['plot_config']
-
-    if 'init_cluster_func' in config:
-        init_func = globals()[config['init_cluster_func']]
-    else:
-        init_func = globals()['rand_init_centroids']
+    init_func = globals()['random_pick_centroids']
 
     final_cluster_assignments, final_centroids, distortion \
         = kmeans(data, k, cluster_atts, cluster_atts_idxs, init_func, plot_config)
@@ -344,7 +307,26 @@ def main():
     plot_cluster_assignments(final_cluster_assignments, final_centroids,
                              data_rows, cluster_atts, cluster_atts_idxs,
                              distortion, plot_config)
+
+    cluster_data_to_csv(final_cluster_assignments, data_rows,
+                        plot_config['output_file_prefix'])
+
     pngs_to_gif(plot_config, k)
+
+
+def cluster_data_to_csv(cluster_assignments, data_rows, output_file_prefix):
+    script_dir = os.path.dirname(__file__)
+    results_dir = os.path.join(
+        script_dir, 'results/' + output_file_prefix + '/')
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+    output_file = results_dir + "20173299-"
+
+    for idx, cluster_assignment in enumerate(cluster_assignments):
+        with open(output_file + str(idx) + ".csv", 'w') as f:
+            writer = csv.writer(f)
+            for x in cluster_assignments[cluster_assignment]:
+                writer.writerow(data_rows[x])
 
 
 def pngs_to_gif(plot_config, k):
